@@ -1,0 +1,263 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="">
+	<meta name="keywords" content="">
+	<meta name="author" content="">
+	<title>E-Signature</title>
+	<!-- Styles -->
+	<link rel="stylesheet" href="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+	<style>
+		body {
+			padding-top: 20px;
+			padding-bottom: 20px;
+		}
+
+		#sig-canvas {
+			border: 2px dotted #CCCCCC;
+			border-radius: 5px;
+			cursor: crosshair;
+			touch-action: none;
+		}
+
+		#sig-dataUrl {
+			width: 100%;
+		}
+	</style>
+</head>
+<body>
+	<!-- Content -->
+	<div class="container">
+		<div class="row">
+			<div class="col-md-12">
+				<h1>Brightness</h1>
+				
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-md-12">
+		 		<canvas id="sig-canvas" width="80" height="320">
+		 			Get a better browser
+		 		</canvas>
+		 	</div>
+		</div>
+		<div class="row">
+			<button type="button" id="amb">Ambient</button>
+			<button type="button" id="s2l">S2L</button>
+			<button type="button" id="strobe">Strobe</button>
+		</div>
+		<div class="row">
+			<input type="color" id="colinput"/>
+			<button type="button" id="setcol">SetColor </button>
+
+		</div>
+		
+	</div>
+	<!-- Scripts -->
+	<script src="https://code.jquery.com/jquery-2.1.0.min.js"></script>
+	<script src="https://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js"></script>
+	<!--<script src="https://code.angularjs.org/snapshot/angular.min.js"></script>-->
+	<script>
+		(function() {
+			function clamp(num, min, max) {
+			  return num <= min ? min : num >= max ? max : num;
+			}
+
+			// Get a regular interval for drawing to the screen
+			window.requestAnimFrame = (function (callback) {
+				return window.requestAnimationFrame || 
+							window.webkitRequestAnimationFrame ||
+							window.mozRequestAnimationFrame ||
+							window.oRequestAnimationFrame ||
+							window.msRequestAnimaitonFrame ||
+							function (callback) {
+
+							 	window.setTimeout(callback, 1000/60);
+							};
+			})();
+
+			// Set up the canvas
+			var canvas = document.getElementById("sig-canvas");
+			var sentState = {
+				brightness: 100,
+				lastSend: 0
+			}
+			var slideState = {
+				min: 0,
+				max: 255,
+				val: 100
+			};
+			var ctx = canvas.getContext("2d");
+
+			var sliding = false;
+			var mousePos = { x:0, y:0 };
+			var startTouchPos = mousePos;
+			var startSlideVal = slideState.val;
+			canvas.addEventListener("mousedown", function (e) {
+				sliding = true;
+				startTouchPos = getMousePos(canvas, e);
+				startSlideVal = slideState.val;
+			}, false);
+			canvas.addEventListener("mouseup", function (e) {
+				sliding = false;
+			}, false);
+			canvas.addEventListener("mousemove", function (e) {
+				mousePos = getMousePos(canvas, e);
+			}, false);
+
+			// Set up touch events for mobile, etc
+			canvas.addEventListener("touchstart", function (e) {
+				mousePos = startTouchPos = getTouchPos(canvas, e);
+				var touch = e.touches[0];
+				var mouseEvent = new MouseEvent("mousedown", {
+					clientX: touch.clientX,
+					clientY: touch.clientY
+				});
+				canvas.dispatchEvent(mouseEvent);
+			}, false);
+			canvas.addEventListener("touchend", function (e) {
+				var mouseEvent = new MouseEvent("mouseup", {});
+				canvas.dispatchEvent(mouseEvent);
+			}, false);
+			canvas.addEventListener("touchmove", function (e) {
+				var touch = e.touches[0];
+				var mouseEvent = new MouseEvent("mousemove", {
+					clientX: touch.clientX,
+					clientY: touch.clientY
+				});
+				canvas.dispatchEvent(mouseEvent);
+			}, false);
+
+			// Prevent scrolling when touching the canvas
+			document.body.addEventListener("touchstart", function (e) {
+				if (e.target === canvas) {
+					e.preventDefault();
+				}
+			}, false);
+			document.body.addEventListener("touchend", function (e) {
+				if (e.target === canvas) {
+					e.preventDefault();
+				}
+			}, false);
+			document.body.addEventListener("touchmove", function (e) {
+				if (e.target === canvas) {
+					e.preventDefault();
+				}
+			}, false);
+
+			// Get the position of the mouse relative to the canvas
+			function getMousePos(canvasDom, mouseEvent) {
+				var rect = canvasDom.getBoundingClientRect();
+				return {
+					x: mouseEvent.clientX - rect.left,
+					y: mouseEvent.clientY - rect.top
+				};
+			}
+
+			// Get the position of a touch relative to the canvas
+			function getTouchPos(canvasDom, touchEvent) {
+				var rect = canvasDom.getBoundingClientRect();
+				return {
+					x: touchEvent.touches[0].clientX - rect.left,
+					y: touchEvent.touches[0].clientY - rect.top
+				};
+			}
+			var last = 0;
+			var socket = new WebSocket("ws://"+window.location.hostname+":8081");
+
+			function ensureSocket(){
+				if(socket == null || socket.readyState > 1){
+					socket = new WebSocket("ws://"+window.location.hostname+":8081");
+				}
+			}
+
+			function makeSender(obj){
+				return () => {
+					ensureSocket();
+					if(socket.readyState === 1){
+						let seee = JSON.stringify(obj);
+						console.log("sent: "+seee);
+
+						socket.send(seee);
+					}
+				};
+			}
+
+			document.getElementById("amb").onclick = makeSender({
+				...sentState,
+				operation: 'ambient'
+			});
+
+			document.getElementById("s2l").onclick = makeSender({
+				...sentState,
+				operation: 's2l'
+			});
+
+			document.getElementById("strobe").onclick = makeSender({
+				...sentState,
+				operation: 'strobe'
+			});
+
+
+			document.getElementById("setcol").onclick = () => {
+				ensureSocket();
+				if(socket.readyState === 1){
+					let colorChooser = document.getElementById("colinput");
+					let col = ("" + colorChooser.value).substring(1).match(/.{1,2}/g);
+					console.log(col);
+					var aRgb = [
+						parseInt(col[0], 16),
+						parseInt(col[1], 16),
+						parseInt(col[2], 16)
+					];
+					let seee = JSON.stringify({
+						...sentState,
+						operation: 'fullcolor',
+						red: aRgb[0],
+						green: aRgb[1],
+						blue: aRgb[2]
+					});
+					console.log("sent: "+seee);
+
+					socket.send(seee);
+				}
+			};
+
+			// Draw to the canvas
+			function renderCanvas(time) {
+				let elapsed = time - last;
+				last = time;
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
+				if (sliding) {
+					slideState.val = clamp(startSlideVal + -(mousePos.y - startTouchPos.y) * ((slideState.max - slideState.min) / canvas.height), 0, 255);
+				}
+				ctx.fillRect(0, canvas.height, canvas.width, -(slideState.val / ((slideState.max - slideState.min) / canvas.height)));
+				ctx.font = '24px serif';
+  				ctx.fillText(elapsed, 10, 50);
+
+				ensureSocket();
+
+  				let t = Date.now();
+  				if(socket.readyState === 1 && t - sentState.lastSend > 25 && (t - sentState.lastSend > 4000 /*ping*/ || (sentState.brightness !== slideState.val)) && socket.bufferedAmount <= 0){
+  					sentState.brightness = slideState.val;
+  					let seee = JSON.stringify(sentState);
+  					console.log("sent: "+seee);
+  					
+  					socket.send(seee);
+  					sentState.lastSend = t;
+  				}
+			}
+
+			// Allow for animation
+			(function drawLoop (time) {
+				requestAnimFrame(drawLoop);
+				renderCanvas(time);
+			})();
+
+		})();
+	</script>
+</body>
+</html>
