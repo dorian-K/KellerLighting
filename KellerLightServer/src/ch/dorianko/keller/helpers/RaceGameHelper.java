@@ -28,7 +28,7 @@ public class RaceGameHelper extends AbstractHelper {
         var target = Util.map(rpm, startRpm, maxRpm, 0, numLed);
 
         Color[] c = new Color[numLed];
-        boolean nowBlink = System.currentTimeMillis() % 200 < 100;
+        boolean nowBlink = System.currentTimeMillis() % 100 < 50;
         for (int i = 0; i < c.length; i++) {
             if (i >= (int) target + 1) {
                 c[i] = Color.BLACK;
