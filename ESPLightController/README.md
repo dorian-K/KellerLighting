@@ -7,6 +7,9 @@ Data transmission is accomplished via Serial, see [serialutil.h](src/serialutil.
 
 Over the air updates are implemented via a WebServer, see [ota_util.h](src/ota_util.h). The code will not compile before you define WLAN_SSID and WLAN_PW.
 
+https://user-images.githubusercontent.com/62394594/163398682-77a8644a-9475-4917-b96e-9ec3c741e50f.mp4
+
+
 There are 5 components:
 
 [Ambient](src/components/AmbientComponent.h)
