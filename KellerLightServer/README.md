@@ -11,6 +11,20 @@ It also hosts a [WebSocket server](src/ch/dorianko/keller/WSApi.java) on port 80
 
 All APIs are unauthenthicated and should therefore only be run within a trusted network.
 
+___
+
+https://user-images.githubusercontent.com/62394594/163397707-ca51e8fc-24f2-42d8-b84f-1fead1304064.mp4
+
+Web interface accessed from a mobile phone
+
+___
+
+https://user-images.githubusercontent.com/62394594/163397752-12009573-7315-4f28-bd83-b28f12e41982.mp4
+
+Tasmota device -> Home Assistant -> REST Apis
+
+___
+
 Similar to the LED controller, modes are seperated into multiple files:
 
 [S2L Helper](src/ch/dorianko/keller/helpers/S2LHelper.java)
@@ -20,6 +34,9 @@ First, the Sound to Light helper grabs audio input from a connected microphone a
 [Race Game Helper](src/ch/dorianko/keller/helpers/RaceGameHelper.java)
 ----------------
 Processes a json object sent via the WebSocket api and converts it into lighting data.
+
+https://user-images.githubusercontent.com/62394594/163398271-5db26505-bccf-4881-b249-ace86b67e445.mp4
+
 
 [FullColorHelper](src/ch/dorianko/keller/helpers/FullColorHelper.java)
 -----------------
